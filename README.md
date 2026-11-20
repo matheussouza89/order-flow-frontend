@@ -164,15 +164,20 @@ quadriculado de prancheta.
 
 - **Quadro do produto:** fica no lugar da foto. Fundo `accent-soft`, grade
   cobalto (`#2350D826`) a cada 12px e a primeira palavra do nome em Plex Sans
-  Condensed 700, cobalto. No carrinho vira miniatura de 44px, com grade de 8px
+  Condensed 700, cobalto. No carrinho vira miniatura de 48px, com grade de 8px
   e só a inicial.
+- **Card do produto:** quadro, nome (link para o produto), `description` em até
+  duas linhas, preço e "Adicionar ao carrinho". A descrição é texto livre e
+  pode vir `null` (§5.2); o espaço fica reservado, e os cards de uma linha
+  mantêm a mesma altura.
 - **Uma ousadia só:** o quadro é o único elemento chamativo; o resto da tela
-  fica quieto.
+  fica quieto. Por isso o botão do card é de contorno: seis botões cheios
+  disputariam com o quadro.
 - **Forma:** cantos de 4px nos controles e de 6px nas caixas, e bordas de 1px
   no lugar de sombra.
 - **Backoffice:** a mesma base, com barra lateral azul-marinho e tabelas
   densas. O botão de ação de cada linha segue a máquina de estados (§6.1):
-  Enviar só em `CONFIRMED`, Entregar só em `SHIPPED`.
+  "Marcar enviado" só em `CONFIRMED`, "Marcar entregue" só em `SHIPPED`.
 
 Tokens:
 
@@ -183,7 +188,9 @@ Tokens:
 | `ink` | `#10213F` | texto |
 | `muted` | `#4A5A78` | texto secundário |
 | `line` | `#C9D3E3` | bordas |
+| `line-soft` | `#E3E9F2` | divisórias entre linhas de lista e tabela |
 | `bar` | `#10213F` | barra do topo e lateral do backoffice |
+| `ring-dark` | `#6F93FF` | foco e item ativo sobre a barra azul-marinho |
 | `accent` | `#2350D8` | botão principal, links, quadro do produto |
 | `accent-soft` | `#E6EDF9` | fundo do quadro, item ativo |
 | `warning-*` | fundo `#FBF3E4`, borda `#E9D3A8`, texto `#6B4A10`, marcador `#B7791F` | avisos (item que saiu do catálogo) |
@@ -191,28 +198,65 @@ Tokens:
 
 Tipografia, uma família só com três papéis:
 
-- **IBM Plex Sans:** texto e interface, base de 14px.
+- **IBM Plex Sans:** texto e interface, base de 16px.
 - **IBM Plex Sans Condensed 700:** títulos, preços e totais, com algarismos
   tabulares.
-- **IBM Plex Mono:** só para IDs, como o UUID do pedido com botão Copiar.
+- **IBM Plex Mono:** só para IDs, como o UUID do pedido.
+
+Tamanhos:
+
+- Texto que se lê: 16px. Descrição, preço unitário e datas: 14px. Rótulos e
+  cabeçalhos de tabela: 13px, o mínimo.
+- Título da tela 28px, preço no card 22px, total do carrinho 24px.
+- Alvo de toque de 44px na loja. Os botões das linhas do backoffice têm 36px,
+  porque a tabela precisa ser densa.
+- Espaçamento na escala 4, 8, 12, 16, 24 e 32px.
+
+Botões:
+
+- Um único botão cheio por tela, na ação principal (Finalizar compra).
+- O resto é de contorno. A ação destrutiva usa o mesmo contorno, em vermelho.
+- Rótulo com verbo e objeto: "Adicionar ao carrinho", "Marcar enviado",
+  "Copiar número". Botões repetidos numa lista levam o item no nome acessível
+  ("Adicionar Mouse sem fio ao carrinho").
+- Quantidade, ordenação e paginação são controles de verdade: o − fica
+  desativado na quantidade 1, a ordenação tem rótulo visível e só oferece
+  campos aceitos pela API (§3.6), e "Anterior" fica desativado na primeira
+  página.
+
+Foco e movimento:
+
+- Foco: anel de 2px em `accent`, afastado 2px, sem animação. Sobre a barra
+  azul-marinho, em `ring-dark`.
+- Hover: o botão clareia e sobe 1px; o card com link sobe 2px; o clique afunda
+  1px. Duração de 150ms na entrada, 120ms na saída e 90ms no clique.
+- Nada se move com a rolagem. Com `prefers-reduced-motion`, só as cores mudam.
 
 Status: quadrado colorido mais rótulo em português, nunca só a cor. Quadrado
-vazado indica que algo ainda está pendente. O pulso do pagamento em
-processamento para com `prefers-reduced-motion`.
+vazado indica que algo ainda está pendente. Enquanto o polling do pagamento
+roda, o marcador de "Processando" gira. No teto do polling, ele para, e o
+bloco mostra "Sem resposta ainda" com o botão "Verificar de novo", porque
+`PENDING` pode não terminar (§6.2).
 
 | Status | Rótulo | Cor | Marcador |
 |---|---|---|---|
 | Pedido `PENDING` | Pendente | `#7A88A3` | vazado |
 | Pedido `CONFIRMED` | Confirmado | `#2350D8` | cheio |
-| Pedido `SHIPPED` | Enviado | `#7A4DD8` | cheio |
+| Pedido `SHIPPED` | Enviado | `#0891B2` | cheio |
 | Pedido `DELIVERED` | Entregue | `#2F855A` | cheio |
 | Pedido `CANCELLED` | Cancelado | `#A0AEC4` | cheio |
-| Pagamento `PENDING` | Processando | `#B7791F` | vazado, pulsando |
+| Pagamento `PENDING` | Processando | `#B7791F` | vazado; gira durante o polling |
 | Pagamento `APPROVED` | Aprovado | `#2F855A` | cheio |
 | Pagamento `DECLINED` | Recusado | `#C53030` | cheio |
 | Pagamento `FAILED` | Falhou | `#8B2525` | cheio |
 
-O detalhe do pedido mostra as etapas Pendente, Confirmado, Enviado e Entregue.
+O detalhe do pedido mostra as etapas Pendente, Confirmado, Enviado e Entregue,
+com marcadores quadrados. O título usa o código curto (os 8 primeiros
+caracteres do UUID), o mesmo da lista do backoffice, para que cliente e admin
+falem do mesmo pedido. O UUID completo fica abaixo, com "Copiar número".
+
+No carrinho, cada linha tem "Remover" (`DELETE /cart/items/{id}`). Em larguras
+médias, quantidade e subtotal descem para baixo do nome.
 
 Direções descartadas:
 
@@ -228,6 +272,20 @@ Paletas descartadas, dentro da ficha técnica:
   mas o verde disputa com o verde de "aprovado" e de "entregue".
 - **Milimetrado:** grafite sobre papel milimetrado, com marca-texto amarelo. É
   a mais neutra, mas a mais sem cara.
+
+Revisão com a [taste-skill](https://github.com/Leonxlnx/taste-skill), um guia
+de design para agentes. Ela foi feita para sites institucionais, então só
+entrou o que vale para telas de aplicativo:
+
+- **Adotado:** nada de roxo ("Enviado" era `#7A4DD8`; o verde-azulado testado
+  em seguida ficava igual ao verde de "Entregue"), texto e alvos de toque
+  maiores, foco visível, resposta a hover e clique, rótulos visíveis, botões
+  com verbo e objeto, e nenhum ponto piscando.
+- **Recusado:** fotos de banco de imagens no lugar do quadro. A API não tem
+  campo de imagem, então não há como escolher a foto certa para cada produto
+  que o admin cadastra.
+- **Fora do escopo:** hero, seções do tamanho de uma tela, animações de
+  rolagem e efeitos.
 
 ### Storybook como vitrine do design system
 
