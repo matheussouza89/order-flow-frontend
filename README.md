@@ -9,7 +9,7 @@ o porquê. Tudo o que o front precisa saber da API está em
 [`docs/backend-reference.md`](docs/backend-reference.md), citada aqui como §N.
 
 **Estado:** planejamento. Stack, design system, identidade visual, estrutura,
-decisões de produto, telas, estados de tela e modo escuro definidos; celular,
+decisões de produto, telas, estados de tela, modo escuro e celular definidos;
 CI e deploy em aberto.
 
 ## Stack
@@ -273,8 +273,8 @@ Camadas e avisos:
 - Lucide, que o shadcn já usa, com traço de 2px na cor do texto: 16px ao lado
   de texto, 20px sozinho num botão.
 - Só onde ajudam a reconhecer: fechar o diálogo, copiar, carrinho no topo,
-  botão de tema, setas do calendário e seta do select. Ícone sem texto tem
-  nome acessível.
+  Menu do celular, botão de tema, setas do calendário e seta do select. Ícone
+  sem texto tem nome acessível.
 - Status continua sendo o quadrado. Títulos, cards e o menu lateral não levam
   ícone: ícone em tudo dá cara de template.
 
@@ -368,7 +368,8 @@ claro.
 
 - **Como alternar:** segue o tema do sistema (`prefers-color-scheme`). Um botão
   de tema no topo da loja e na barra lateral do backoffice abre Sistema, Claro
-  e Escuro, e a escolha fica no localStorage. Um script curto no `<head>`
+  e Escuro (no celular, o tema fica dentro do Menu), e a escolha fica no
+  localStorage. Um script curto no `<head>`
   aplica o tema antes da primeira pintura, para a página não abrir no tema
   errado e trocar em seguida. Assim o sistema é respeitado e quem vê a demo
   troca de tema sem mexer no sistema.
@@ -636,6 +637,51 @@ Cada serviço do backend cai sozinho: com o catálogo fora, os pedidos continuam
   teria de funcionar por cima de qualquer tela. 503 ou 504 no refresh não
   encerram a sessão: é o serviço de contas fora (§4.5).
 
+### Celular
+
+Três larguras: até 639px é celular, de 640 a 1023px é tablet, de 1024px em
+diante é computador. Componente que muda pelo espaço que tem, como a linha do
+carrinho, usa container query.
+
+Loja:
+
+- **Catálogo:** uma coluna no celular, com o card deitado: quadro de 96px à
+  esquerda; nome, descrição e preço à direita; "Adicionar ao carrinho" largo
+  embaixo. Cabem dois ou três produtos por tela, e o rótulo inteiro cabe. Duas
+  colunas espremeriam nome e descrição em 160px; o card em pé mostraria um
+  produto e meio. No tablet são duas colunas; no computador, três.
+- **Navegação:** o topo mostra o carrinho com a contagem e o botão Menu, que
+  abre por cima da tela Catálogo, Meus pedidos, Conta e o tema (Sistema, Claro,
+  Escuro). Esc, o fundo ou o próprio Menu fecham. O carrinho fica sempre à
+  vista, e nada fixo come a tela. Abas fixas embaixo deixariam tudo a um
+  toque, mas disputariam espaço com a barra do navegador e com a de "Finalizar
+  compra".
+- **Barra fixa:** no carrinho e na revisão do pedido, o total e o botão
+  principal ("Finalizar compra", "Confirmar compra") ficam presos ao rodapé,
+  acima da área segura do aparelho (`env(safe-area-inset-bottom)`). Assim o
+  total fica sempre à vista e o botão, ao alcance do polegar. "Cancelar
+  pedido" fica no fim da lista, fora da barra.
+- **Detalhe do produto:** quadro em cima, com a largura da tela; quantidade e
+  "Adicionar ao carrinho" logo abaixo do preço.
+- **Pedido:** o bloco de pagamento vem antes dos itens, porque é o que muda
+  depois da compra. As etapas ficam na vertical: lado a lado, os rótulos se
+  atropelam em 360px.
+- **Tabelas da loja** (Meus pedidos, itens do pedido e da revisão) viram
+  lista. Em Meus pedidos: código e status em cima, itens no meio, data e total
+  embaixo.
+
+Backoffice:
+
+- Abaixo de 1024px, a barra lateral vira o Menu do topo.
+- No celular, cada linha de tabela vira um card (Pedidos, Produtos,
+  Notificações, Mais vendidos), e os botões das linhas voltam a ter 44px. É um
+  segundo layout por tabela, mas deixa o backoffice usável numa demo no
+  celular. Tabela rolando de lado foi descartada; no tablet, a tabela continua.
+- Botão desativado ganha uma linha que explica por quê ("Liberado quando o
+  pagamento for aprovado").
+- Vendas: datas lado a lado, números em grade de dois, e o gráfico rola de
+  lado, aberto no dia mais recente.
+
 ### ESLint e Prettier, não Biome
 
 O Biome é mais rápido e é uma ferramenta só, mas os plugins de que o projeto
@@ -714,5 +760,4 @@ Backoffice:
 
 ## Em aberto
 
-- Conferência do layout no celular.
 - CI e deploy.
