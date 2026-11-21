@@ -9,7 +9,8 @@ o porquê. Tudo o que o front precisa saber da API está em
 [`docs/backend-reference.md`](docs/backend-reference.md), citada aqui como §N.
 
 **Estado:** planejamento. Stack, design system, identidade visual, estrutura,
-decisões de produto e telas definidos; estados de tela, CI e deploy em aberto.
+decisões de produto, telas e modo escuro definidos; estados de tela, celular,
+CI e deploy em aberto.
 
 ## Stack
 
@@ -174,7 +175,8 @@ quadriculado de prancheta.
   fica quieto. Por isso o botão do card é de contorno: seis botões cheios
   disputariam com o quadro.
 - **Forma:** cantos de 4px nos controles e de 6px nas caixas, e bordas de 1px
-  no lugar de sombra.
+  no lugar de sombra. Só o que flutua sobre a tela tem sombra (ver "Camadas e
+  avisos").
 - **Backoffice:** a mesma base, com barra lateral azul-marinho e tabelas
   densas. O botão de ação de cada linha segue a máquina de estados (§6.1):
   "Marcar enviado" só em `CONFIRMED`, "Marcar entregue" só em `SHIPPED`.
@@ -192,9 +194,15 @@ Tokens:
 | `bar` | `#10213F` | barra do topo e lateral do backoffice |
 | `ring-dark` | `#6F93FF` | foco e item ativo sobre a barra azul-marinho |
 | `accent` | `#2350D8` | botão principal, links, quadro do produto |
+| `on-accent` | `#FFFFFF` | texto do botão cheio |
 | `accent-soft` | `#E6EDF9` | fundo do quadro, item ativo |
+| `raised` | `#FFFFFF` | diálogo, menu e calendário (no escuro, mais claro que `surface`) |
+| `success-*` | fundo `#EAF5EE`, borda `#B9DCC6`, texto `#1F5A3A`, marcador `#2F855A` | toast e confirmação na tela (Adicionado ao carrinho) |
 | `warning-*` | fundo `#FBF3E4`, borda `#E9D3A8`, texto `#6B4A10`, marcador `#B7791F` | avisos (item que saiu do catálogo) |
-| `danger-*` | texto `#B42B2B`, borda `#E7C2C2` | botão de contorno para ação destrutiva (Cancelar pedido) |
+| `danger-*` | fundo `#FBEFEF`, borda `#E7C2C2`, texto `#7A1F1F`, marcador `#B42B2B` | aviso de erro; o marcador também é o texto do botão destrutivo (Cancelar pedido) e do erro de campo |
+| `disabled` | texto `#6B7A96` sobre `bg`, borda `line` | controle desativado |
+| `shadow-float` | `0 12px 32px #10213F33` | diálogo, menu, calendário e toast |
+| `overlay` | `#10213F80` | fundo escurecido atrás do diálogo |
 
 Tipografia, uma família só com três papéis:
 
@@ -205,8 +213,8 @@ Tipografia, uma família só com três papéis:
 
 Tamanhos:
 
-- Texto que se lê: 16px. Descrição, preço unitário e datas: 14px. Rótulos e
-  cabeçalhos de tabela: 13px, o mínimo.
+- Texto que se lê: 16px. Descrição, preço unitário, datas e rótulos de campo:
+  14px. Cabeçalhos de tabela, eixos do gráfico e contadores: 13px, o mínimo.
 - Título da tela 28px, preço no card 22px, total do carrinho 24px.
 - Alvo de toque de 44px na loja. Os botões das linhas do backoffice têm 36px,
   porque a tabela precisa ser densa.
@@ -226,11 +234,69 @@ Botões:
 
 Foco e movimento:
 
-- Foco: anel de 2px em `accent`, afastado 2px, sem animação. Sobre a barra
-  azul-marinho, em `ring-dark`.
+- Foco: anel de 2px em `accent`, afastado 2px, sem animação, igual em botões,
+  links e campos. Sobre a barra azul-marinho, em `ring-dark`. O halo
+  translúcido do shadcn foi descartado: tem contraste de cerca de 1,4:1, abaixo
+  dos 3:1 que o foco precisa.
 - Hover: o botão clareia e sobe 1px; o card com link sobe 2px; o clique afunda
   1px. Duração de 150ms na entrada, 120ms na saída e 90ms no clique.
 - Nada se move com a rolagem. Com `prefers-reduced-motion`, só as cores mudam.
+
+Campos:
+
+- Rótulo acima, em 14px e peso 500. Dica abaixo, em 14px e `muted`, ligada ao
+  campo por `aria-describedby`.
+- Altura igual à do botão ao lado: 44px na loja e nos formulários, 36px nos
+  filtros do backoffice.
+- Erro abaixo do campo, em `danger`, com um quadrado de 8px na frente; a borda
+  do campo fica vermelha (`aria-invalid`). O texto diz como corrigir ("Escreva
+  o e-mail completo, como nome@exemplo.com").
+- Contador (descrição do produto) em 13px, alinhado à direita.
+
+Camadas e avisos:
+
+- Diálogo, menu, calendário e toast ficam por cima da página e são os únicos
+  com sombra (`shadow-float`), sem perder a borda de 1px. Sem sombra, um menu
+  branco sobre uma caixa branca se confunde com o que está embaixo. O diálogo
+  escurece o fundo com `overlay`.
+- Toast só confirma ação que deu certo: "Número copiado", "Nome salvo",
+  "Produto salvo". Usa a família `success`, aparece embaixo à direita (embaixo
+  e no centro no celular) e some em 4 segundos.
+- Erro nunca vai para toast. Fica na tela, perto de onde aconteceu (no campo ou
+  no bloco do botão), porque um aviso que some sozinho pode não ser lido.
+- Confirmação com próximo passo também fica na tela, como "Adicionado ao
+  carrinho" com "Ver carrinho".
+
+Ícones:
+
+- Lucide, que o shadcn já usa, com traço de 2px na cor do texto: 16px ao lado
+  de texto, 20px sozinho num botão.
+- Só onde ajudam a reconhecer: fechar o diálogo, copiar, carrinho no topo,
+  botão de tema, setas do calendário e seta do select. Ícone sem texto tem
+  nome acessível.
+- Status continua sendo o quadrado. Títulos, cards e o menu lateral não levam
+  ícone: ícone em tudo dá cara de template.
+
+Gráfico de vendas:
+
+- Uma barra por dia, toda em `accent`, com cantos retos como os marcadores. O
+  dia sem venda tem um traço de 2px em `line` na base, para não parecer dado
+  faltando.
+- Eixos em 13px e `muted`, com datas como 03/11 e valores abreviados (R$ 1,2
+  mil). Grade só horizontal, em `line-soft`.
+- Tooltip em caixa flutuante, com a data e o valor do dia; a coluna sob o mouse
+  ganha fundo `accent-soft`. As setas do teclado percorrem os dias.
+- O melhor dia não ganha cor própria, porque já aparece em número ao lado do
+  gráfico.
+
+Marca:
+
+- O nome "OrderFlow" em Plex Sans Condensed 700, 20px, branco na barra
+  azul-marinho. Sem símbolo.
+- Favicon: quadrado azul-marinho (`bar`) com um "O" branco na mesma fonte, em
+  SVG, com a letra convertida em contorno para não depender da fonte. Tem
+  contraste em aba clara e escura; a versão com o quadro azul-claro quase
+  sumia em aba clara.
 
 Status: quadrado colorido mais rótulo em português, nunca só a cor. Quadrado
 vazado indica que algo ainda está pendente. Enquanto o polling do pagamento
@@ -238,22 +304,22 @@ roda, o marcador de "Processando" gira. No teto do polling, ele para, e o
 bloco mostra "Sem resposta ainda" com o botão "Verificar de novo", porque
 `PENDING` pode não terminar (§6.2).
 
-| Status | Rótulo | Cor | Marcador |
-|---|---|---|---|
-| Pedido `PENDING` | Pendente | `#7A88A3` | vazado |
-| Pedido `CONFIRMED` | Confirmado | `#2350D8` | cheio |
-| Pedido `SHIPPED` | Enviado | `#0891B2` | cheio |
-| Pedido `DELIVERED` | Entregue | `#2F855A` | cheio |
-| Pedido `CANCELLED` | Cancelado | `#A0AEC4` | cheio |
-| Pagamento `PENDING` | Processando | `#B7791F` | vazado; gira durante o polling |
-| Pagamento `APPROVED` | Aprovado | `#2F855A` | cheio |
-| Pagamento `DECLINED` | Recusado | `#C53030` | cheio |
-| Pagamento `FAILED` | Falhou | `#8B2525` | cheio |
-| Notificação `PENDING` | Na fila | `#7A88A3` | vazado |
-| Notificação `SENT` | Enviada | `#2F855A` | cheio |
-| Notificação `FAILED` | Falhou | `#8B2525` | cheio |
-| Notificação `NO_RECIPIENT` | Sem destinatário | `#B7791F` | cheio |
-| Notificação `SUPERSEDED` | Substituída | `#A0AEC4` | cheio |
+| Status | Rótulo | Cor | Cor no escuro | Marcador |
+|---|---|---|---|---|
+| Pedido `PENDING` | Pendente | `#7A88A3` | `#8D9AB5` | vazado |
+| Pedido `CONFIRMED` | Confirmado | `#2350D8` | `#8AA6FF` | cheio |
+| Pedido `SHIPPED` | Enviado | `#0891B2` | `#3CC4E0` | cheio |
+| Pedido `DELIVERED` | Entregue | `#2F855A` | `#4FBF82` | cheio |
+| Pedido `CANCELLED` | Cancelado | `#A0AEC4` | `#6E7C97` | cheio |
+| Pagamento `PENDING` | Processando | `#B7791F` | `#E0A845` | vazado; gira durante o polling |
+| Pagamento `APPROVED` | Aprovado | `#2F855A` | `#4FBF82` | cheio |
+| Pagamento `DECLINED` | Recusado | `#C53030` | `#F07272` | cheio |
+| Pagamento `FAILED` | Falhou | `#8B2525` | `#C97070` | cheio |
+| Notificação `PENDING` | Na fila | `#7A88A3` | `#8D9AB5` | vazado |
+| Notificação `SENT` | Enviada | `#2F855A` | `#4FBF82` | cheio |
+| Notificação `FAILED` | Falhou | `#8B2525` | `#C97070` | cheio |
+| Notificação `NO_RECIPIENT` | Sem destinatário | `#B7791F` | `#E0A845` | cheio |
+| Notificação `SUPERSEDED` | Substituída | `#A0AEC4` | `#6E7C97` | cheio |
 
 O detalhe do pedido mostra as etapas Pendente, Confirmado, Enviado e Entregue,
 com marcadores quadrados. O título usa o código curto (os 8 primeiros
@@ -291,6 +357,54 @@ entrou o que vale para telas de aplicativo:
   que o admin cadastra.
 - **Fora do escopo:** hero, seções do tamanho de uma tela, animações de
   rolagem e efeitos.
+
+### Modo escuro: cianotipia
+
+À noite, a prancheta vira planta de engenharia: papel azul-marinho com traço
+claro. A identidade continua a mesma; só os valores dos tokens mudam, sob
+`[data-theme="dark"]`. O fundo das caixas usa quase o azul do texto do modo
+claro.
+
+- **Como alternar:** segue o tema do sistema (`prefers-color-scheme`). Um botão
+  de tema no topo da loja e na barra lateral do backoffice abre Sistema, Claro
+  e Escuro, e a escolha fica no localStorage. Um script curto no `<head>`
+  aplica o tema antes da primeira pintura, para a página não abrir no tema
+  errado e trocar em seguida. Assim o sistema é respeitado e quem vê a demo
+  troca de tema sem mexer no sistema.
+- **Cobalto:** clareia para `#8AA6FF`, e o botão cheio passa a ter texto
+  escuro. O foco usa `accent` em todo lugar.
+- **Barra:** fica mais escura que o fundo e ganha borda `line` embaixo, porque
+  só a cor separa pouco (1,07:1).
+- **O que flutua:** diálogo, menu e calendário usam `raised`, mais claro que
+  `surface`, porque sombra quase não aparece no escuro.
+- **Contraste:** conferido sobre `surface` e `bg`. Todo texto passa de 4,5:1;
+  todo marcador de status, de 3:1.
+
+| Token | Escuro |
+|---|---|
+| `bg` | `#0D1830` |
+| `surface` | `#13213F` |
+| `raised` | `#1A2B50` |
+| `ink` | `#E4EAF5` |
+| `muted` | `#A3B1CC` |
+| `line` | `#2C3F68` |
+| `line-soft` | `#1F3054` |
+| `bar` | `#081123` |
+| `accent` | `#8AA6FF` |
+| `on-accent` | `#0D1830` |
+| `accent-soft` | `#1A2D5C`, grade do quadro em `#8AA6FF33` |
+| `success-*` | fundo `#12301F`, borda `#2E6B4C`, texto `#A9E5C4`, marcador `#4FBF82` |
+| `warning-*` | fundo `#2E2410`, borda `#6B5220`, texto `#F0D08A`, marcador `#E0A845` |
+| `danger-*` | fundo `#361A20`, borda `#7A3640`, texto `#F5B8B8`, marcador `#F07272` |
+| `disabled` | texto `#7584A3` sobre `bg`, borda `line` |
+| `shadow-float` | `0 12px 32px #00000080` |
+| `overlay` | `#050B18B3` |
+
+As cores de status no escuro estão na tabela de status, acima.
+
+Descartado: **Grafite**, cinza-escuro neutro com azul só no destaque. Os
+status se destacariam mais, mas é o modo escuro de qualquer app (preto e um
+acento só), e a ficha técnica perderia o papel azul.
 
 ### Storybook como vitrine do design system
 
@@ -549,5 +663,5 @@ Backoffice:
 
 - Estados de cada tela além do vazio de "Meus pedidos": carregando, erro e
   serviço fora do ar.
-- Modo escuro, e a conferência do layout no celular.
+- Conferência do layout no celular.
 - CI e deploy.
