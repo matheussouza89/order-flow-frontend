@@ -9,7 +9,7 @@ o porquê. Tudo o que o front precisa saber da API está em
 [`docs/backend-reference.md`](docs/backend-reference.md), citada aqui como §N.
 
 **Estado:** planejamento. Stack, design system, identidade visual, estrutura,
-decisões de produto, telas e modo escuro definidos; estados de tela, celular,
+decisões de produto, telas, estados de tela e modo escuro definidos; celular,
 CI e deploy em aberto.
 
 ## Stack
@@ -197,6 +197,7 @@ Tokens:
 | `on-accent` | `#FFFFFF` | texto do botão cheio |
 | `accent-soft` | `#E6EDF9` | fundo do quadro, item ativo |
 | `raised` | `#FFFFFF` | diálogo, menu e calendário (no escuro, mais claro que `surface`) |
+| `info-*` | fundo `#E6EDF9`, borda `#C3D2F0`, texto `#1B3A8F`, marcador `#2350D8` | aviso neutro (sessão encerrada, pedido confirmado depois de demora) |
 | `success-*` | fundo `#EAF5EE`, borda `#B9DCC6`, texto `#1F5A3A`, marcador `#2F855A` | toast e confirmação na tela (Adicionado ao carrinho) |
 | `warning-*` | fundo `#FBF3E4`, borda `#E9D3A8`, texto `#6B4A10`, marcador `#B7791F` | avisos (item que saiu do catálogo) |
 | `danger-*` | fundo `#FBEFEF`, borda `#E7C2C2`, texto `#7A1F1F`, marcador `#B42B2B` | aviso de erro; o marcador também é o texto do botão destrutivo (Cancelar pedido) e do erro de campo |
@@ -393,6 +394,7 @@ claro.
 | `accent` | `#8AA6FF` |
 | `on-accent` | `#0D1830` |
 | `accent-soft` | `#1A2D5C`, grade do quadro em `#8AA6FF33` |
+| `info-*` | fundo `#1A2D5C`, borda `#34508F`, texto `#C9D6FF`, marcador `#8AA6FF` |
 | `success-*` | fundo `#12301F`, borda `#2E6B4C`, texto `#A9E5C4`, marcador `#4FBF82` |
 | `warning-*` | fundo `#2E2410`, borda `#6B5220`, texto `#F0D08A`, marcador `#E0A845` |
 | `danger-*` | fundo `#361A20`, borda `#7A3640`, texto `#F5B8B8`, marcador `#F07272` |
@@ -583,6 +585,57 @@ Custo aceito: uma chamada de pagamento por pedido confirmado na página (até 20
 no tamanho padrão). A regra vive só no front: a API continua aceitando o envio
 de qualquer cliente HTTP.
 
+### Estados de tela: carregando, erro e falhas
+
+Cada serviço do backend cai sozinho: com o catálogo fora, os pedidos continuam
+(§7.9). Por isso a falha ocupa o menor pedaço possível da tela.
+
+- **Carregando:** nada nos primeiros 300 ms; depois, um esqueleto com a forma
+  da tela (cards, linhas, blocos), montado com peças comuns. O que não depende
+  da API (topo, título, ordenação) já aparece pronto. Resposta rápida não
+  pisca, e a tela não pula quando os dados chegam. O esqueleto pulsa devagar e
+  fica parado com `prefers-reduced-motion`. O custo é de manutenção: quando o
+  layout de uma tela muda, o esqueleto dela muda junto. Um indicador único no
+  centro seria um componente só, mas a tela pularia ao carregar.
+- **Trocando de página ou atualizando:** os dados antigos ficam na tela,
+  esmaecidos, até os novos chegarem.
+- **Repetição automática:** leitura que falha com 503, 504 ou erro de rede
+  repete uma vez, depois de 1 s, e só então mostra o erro. Ação nunca repete
+  sozinha, porque depois de um 504 ela pode ter acontecido (§3.9). Três
+  repetições, o padrão do TanStack Query, aguentariam o circuit breaker aberto
+  (10 s), mas deixariam a pessoa até 7 s olhando o esqueleto.
+- **Erro num bloco:** o bloco diz o que não carregou e tem "Tentar de novo",
+  de contorno; o resto da tela continua. É o que o bloco de pagamento já fazia.
+- **Erro no dado principal:** sem o pedido ou o catálogo não há o que mostrar,
+  então o erro ocupa a área da tela, com o topo e o menu no lugar. Aí "Tentar
+  de novo" é a ação principal e vira o botão cheio.
+- **Ação que falhou:** durante o envio, o botão fica desativado, com o marcador
+  girando e o mesmo rótulo. Depois de 503, 504 ou erro de rede, o front relê o
+  dado e diz o que encontrou ("o pedido continua pendente" ou "o pedido já foi
+  confirmado"), porque a API grava antes de responder e a ação pode ter
+  acontecido. Só repetir a mensagem de erro faria a pessoa refazer o que já
+  estava feito. Erros 4xx (validação, conflito) seguem os textos de cada tela.
+- **Sem conexão:** erro de rede abre uma faixa só, abaixo do topo, em
+  `warning`: "Sem conexão com o servidor. A página tenta de novo sozinha."
+  Enquanto ela está aberta, uma leitura leve a cada 10 s confere se o servidor
+  voltou; quando volta, a faixa some e o que falhou é lido de novo. Os blocos
+  dizem só o que não carregou, sem repetir a explicação. Risco: um erro gerado
+  pelo próprio gateway pode chegar sem CORS e parecer erro de rede (§11, item
+  20).
+- **Sem acesso:** o link do backoffice só aparece para admin. Quem abre o
+  endereço sem o papel vê "Esta área é só para administradores" com "Voltar à
+  loja", em vez de voltar à loja sem saber por quê.
+- **Página não encontrada:** uma tela só, "Página não encontrada", com "Ir para
+  o catálogo", para endereço errado e para pedido ou produto que não existe.
+  Um texto por tipo diria o que faltou; a tela genérica ficou por ser um caso
+  só.
+- **Sessão encerrada:** quando o refresh falha de vez, a pessoa vai para Entrar
+  com "Sua sessão terminou. Entre de novo para continuar de onde parou" e,
+  depois do login, volta à mesma tela, como no fluxo do carrinho. O que estava
+  digitado num formulário se perde; um login em diálogo evitaria isso, mas
+  teria de funcionar por cima de qualquer tela. 503 ou 504 no refresh não
+  encerram a sessão: é o serviço de contas fora (§4.5).
+
 ### ESLint e Prettier, não Biome
 
 O Biome é mais rápido e é uma ferramenta só, mas os plugins de que o projeto
@@ -661,7 +714,5 @@ Backoffice:
 
 ## Em aberto
 
-- Estados de cada tela além do vazio de "Meus pedidos": carregando, erro e
-  serviço fora do ar.
 - Conferência do layout no celular.
 - CI e deploy.
